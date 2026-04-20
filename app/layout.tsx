@@ -10,6 +10,9 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: "Clivv - Supercharge Your Secrets",
   description: "Clivv combines military-grade encryption with a seamless user experience. Manage, share, and protect your digital identity across all platforms effortlessly.",
+  icons: {
+    icon: "/lock.png",
+  },
 };
 
 export default function RootLayout({
