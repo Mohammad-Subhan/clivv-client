@@ -1,0 +1,150 @@
+@import "tailwindcss";
+
+@theme {
+  --color-tertiary: #ffb784;
+  --color-secondary: #f59e0b;
+  --color-surface-container-low: #1b1b23;
+  --color-inverse-primary: #b45309;
+  --color-primary-fixed: #fef3c7;
+  --color-primary-container: #f59e0b;
+  --color-secondary-container: #d97706;
+  --color-on-primary-fixed-variant: #78350f;
+  --color-on-secondary: #451a03;
+  --color-surface-dim: #13131a;
+  --color-on-error: #690005;
+  --color-on-background: #e4e1ec;
+  --color-error-container: #93000a;
+  --color-on-secondary-container: #451a03;
+  --color-surface-variant: #34343c;
+  --color-on-secondary-fixed: #451a03;
+  --color-on-primary-fixed: #451a03;
+  --color-on-error-container: #ffdad6;
+  --color-on-primary-container: #451a03;
+  --color-on-tertiary-fixed: #301400;
+  --color-primary: #fbbf24;
+  --color-on-tertiary-container: #ffe0cd;
+  --color-primary-fixed-dim: #fbbf24;
+  --color-surface-container-high: #2a2931;
+  --color-surface-bright: #393841;
+  --color-tertiary-container: #a15100;
+  --color-surface-tint: #fbbf24;
+  --color-on-surface-variant: #ccc3d8;
+  --color-secondary-fixed: #fef3c7;
+  --color-on-secondary-fixed-variant: #78350f;
+  --color-surface-container-highest: #34343c;
+  --color-secondary-fixed-dim: #fbbf24;
+  --color-outline: #958da1;
+  --color-outline-variant: #4a4455;
+  --color-error: #ffb4ab;
+  --color-inverse-on-surface: #303038;
+  --color-inverse-surface: #e4e1ec;
+  --color-tertiary-fixed-dim: #ffb784;
+  --color-on-tertiary-fixed-variant: #713700;
+  --color-on-surface: #e4e1ec;
+  --color-on-primary: #451a03;
+  --color-surface-container-lowest: #0e0d15;
+  --color-surface: #13131a;
+  --color-surface-container: #1f1f27;
+  --color-on-tertiary: #4f2500;
+  --color-background-vault: #08080a;
+  --color-text-vault: #e4e1ec;
+  --color-tertiary-fixed: #ffdcc6;
+
+  --font-plus-jakarta: "Plus Jakarta Sans", sans-serif;
+
+  --radius-default: 0.75rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 2rem;
+}
+
+html,
+body {
+  scroll-behavior: smooth !important;
+}
+
+:root {
+  --background: #08080a;
+  --foreground: #e4e1ec;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-plus-jakarta);
+  overflow-x: hidden;
+}
+
+.sentinel-glow {
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.08) 0%, rgba(8, 8, 10, 0) 70%);
+}
+
+.glass-panel-heavy {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-panel-heavy:hover {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+
+.primary-gradient {
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.glass-border-shine {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  position: relative;
+}
+
+.glass-border-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 50%, rgba(255, 255, 255, 0.05) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.btn-elegant {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.btn-elegant:hover {
+  box-shadow: 0 0 20px rgba(217, 119, 6, 0.4);
+  border-color: rgba(251, 191, 36, 0.6);
+  transform: translateY(-1px);
+}
+
+.btn-elegant:active {
+  transform: scale(0.98);
+}
+
+.btn-ghost-elegant {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.btn-ghost-elegant:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+}

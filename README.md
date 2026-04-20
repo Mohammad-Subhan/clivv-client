@@ -1,1 +1,3 @@
-# clivv-client
+# Clivv
+
+A password manager for everyone.
