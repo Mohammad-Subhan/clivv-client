@@ -505,7 +505,7 @@ export default function Home() {
                 <div className="w-3 h-3 rounded-full bg-green-500/30"></div>
               </div>
               <div className="text-[9px] font-bold text-white/20 tracking-[0.2em] uppercase">
-                Clivv Sentinel — v2.4.0
+                Clivv — v2.4.0
               </div>
               <div className="w-12"></div>
             </div>
@@ -657,7 +657,7 @@ export default function Home() {
             </a>
           </div>
           <div className="text-[10px] text-white/20 uppercase tracking-widest font-bold">
-            © 2024 Clivv Sentinel Protocol.
+            © 2024 Clivv Protocol.
           </div>
         </div>
       </footer>

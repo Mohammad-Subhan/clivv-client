@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { X, Globe, User, Lock, ImageIcon, Plus, Upload, Eye, EyeOff } from "lucide-react";
+import api from "@/utils/api";
 
 interface VaultItem {
   id: number;
@@ -23,6 +24,11 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [apiDomain, setApiDomain] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     url: "",
@@ -31,6 +37,35 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
     confirmPassword: "",
     icon: ""
   });
+
+  useEffect(() => {
+    const fetchLogos = async () => {
+      if (!formData.url || formData.url.length < 2 || !showDropdown) {
+        setSearchResults([]);
+        return;
+      }
+      setIsSearching(true);
+      try {
+        const res = await fetch(`https://api.logo.dev/search?q=${formData.url}`, {
+          headers: {
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_LOGO_DEV_SECRET_KEY}`
+          }
+        });
+        const data = await res.json();
+        setSearchResults(data);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      fetchLogos();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [formData.url, showDropdown]);
 
   useEffect(() => {
     if (initialData) {
@@ -42,6 +77,7 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
         confirmPassword: initialData.password,
         icon: initialData.icon
       });
+      setApiDomain(initialData.url);
     } else {
       setFormData({
         name: "",
@@ -51,6 +87,7 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
         confirmPassword: "",
         icon: ""
       });
+      setApiDomain("");
     }
     setShowPassword(false);
     setShowConfirmPassword(false);
@@ -62,6 +99,7 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData({ ...formData, icon: reader.result as string });
+        setApiDomain("");
       };
       reader.readAsDataURL(file);
     }
@@ -71,13 +109,50 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
     fileInputRef.current?.click();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match!");
       return;
     }
-    onSave(formData);
+
+    try {
+      setIsSubmitting(true);
+
+      const submitData = new FormData();
+      submitData.append("name", formData.name);
+      submitData.append("website", formData.url);
+      submitData.append("username", formData.username);
+      submitData.append("password", formData.password);
+
+      if (formData.icon && formData.icon.startsWith("data:")) {
+        try {
+          const res = await fetch(formData.icon);
+          const blob = await res.blob();
+          submitData.append("logo", blob, "logo.png");
+        } catch (e) {
+          console.warn("Could not fetch logo blob", e);
+        }
+      }
+
+      if (!initialData) {
+        await api.post("/api/secret/create", submitData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          }
+        });
+      } else {
+        // Note: Update endpoint logic can be added here
+        console.log("Edit logic triggered (no API defined yet)");
+      }
+
+      onSave(formData);
+    } catch (error) {
+      console.error("Failed to save secret:", error);
+      alert("Failed to save secret. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -99,7 +174,7 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
                 {initialData ? "Edit Vault Item" : "Add New Secret"}
               </h2>
               <p className="text-text-vault/40 text-sm mt-1">
-                Protect your credentials with Clivv Sentinel.
+                Protect your credentials with Clivv.
               </p>
             </div>
             <button
@@ -138,9 +213,58 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
                     type="text"
                     placeholder="netflix.com"
                     value={formData.url}
-                    onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                    onChange={(e) => {
+                      const newUrl = e.target.value;
+                      if (apiDomain && newUrl !== apiDomain && formData.icon?.includes("logo.dev")) {
+                        setFormData({ ...formData, url: newUrl, icon: "" });
+                        setApiDomain("");
+                      } else {
+                        setFormData({ ...formData, url: newUrl });
+                      }
+                      setShowDropdown(true);
+                    }}
+                    onFocus={() => setShowDropdown(true)}
+                    onBlur={() => setShowDropdown(false)}
                     className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-primary/50 transition-all"
                   />
+                  {showDropdown && (searchResults.length > 0 || isSearching) && (
+                    <div className="absolute top-full left-0 z-50 w-full mt-2 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 max-h-60 overflow-y-auto">
+                      {isSearching ? (
+                        <div className="p-4 rounded-xl text-sm border border-white/10 bg-background-vault text-text-vault/40 text-center flex items-center justify-center gap-2">
+                          <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                          Searching...
+                        </div>
+                      ) : (
+                        <div className="border border-white/10 bg-background-vault rounded-lg overflow-hidden">
+                          <div className="overflow-y-auto overflow-hidden max-h-[200px] [&::-webkit-scrollbar]:w-0.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-thumb]:rounded-full">
+                            {searchResults.map((item, idx) => (
+                              <div
+                                key={idx}
+                                className="flex items-center gap-3 p-3 hover:bg-white/5 cursor-pointer transition-colors border-b border-white/5 last:border-0"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    url: item.domain,
+                                    icon: `${item.logo_url}&theme=dark&format=png`,
+                                    name: prev.name ? prev.name : item.name
+                                  }));
+                                  setApiDomain(item.domain);
+                                  setShowDropdown(false);
+                                }}
+                              >
+                                <img src={`${item.logo_url}&theme=dark&format=png`} alt={item.name} className="w-6 h-6 object-contain rounded-md bg-white/5" />
+                                <div>
+                                  <div className="text-sm font-bold text-white">{item.name}</div>
+                                  <div className="text-xs text-text-vault/40">{item.domain}</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -255,9 +379,10 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
               </button>
               <button
                 type="submit"
-                className="flex-2 primary-gradient text-on-primary py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 btn-elegant cursor-pointer shadow-lg shadow-primary/20"
+                disabled={isSubmitting}
+                className="flex-2 primary-gradient text-on-primary py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 btn-elegant cursor-pointer shadow-lg shadow-primary/20 disabled:opacity-50"
               >
-                {initialData ? "Update Item" : "Secure Secret"}
+                {isSubmitting ? "Saving..." : (initialData ? "Update Item" : "Secure Secret")}
               </button>
             </div>
           </form>

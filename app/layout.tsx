@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "react-hot-toast";
+import ReduxProvider from "@/store/Provider";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
@@ -23,7 +25,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${plusJakartaSans.variable} dark antialiased`}>
       <body className="bg-background-vault text-text-vault">
-        {children}
+        <ReduxProvider>
+          {children}
+          <Toaster position="top-center" />
+        </ReduxProvider>
       </body>
     </html>
   );

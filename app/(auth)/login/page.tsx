@@ -4,9 +4,40 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Eye, EyeOff, ArrowRight } from "lucide-react";
+import api from "@/utils/api";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "@/store/authSlice";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const dispatch = useDispatch();
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    try {
+      setLoading(true)
+      const res = await api.post("/api/auth/login", {
+        email,
+        password,
+      });
+      dispatch(
+        setCredentials({ user: res.data.user, token: res.data.access_token })
+      );
+      toast.success(res.data.message || "Login successful");
+      router.push("/dashboard");
+    } catch (err: any) {
+      const errorMessage = err.response.data.message;
+      toast.error(Array.isArray(errorMessage) ? errorMessage[0] : errorMessage || "Something went wrong");
+    } finally {
+      setLoading(false)
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background-vault text-text-vault flex items-center justify-center p-6 relative overflow-hidden">
@@ -30,12 +61,14 @@ export default function LoginPage() {
             <p className="text-text-vault/40 text-sm mt-1">Secure access to your vault</p>
           </div>
 
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={handleLogin}>
             <div className="flex flex-col gap-2">
               <label className="text-xs font-medium text-text-vault/30 ml-1">Email Address</label>
               <input
                 type="email"
                 placeholder="name@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 px-4 text-sm focus:outline-none focus:border-primary/50 transition-all focus:bg-white/[0.07]"
               />
             </div>
@@ -51,23 +84,25 @@ export default function LoginPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 px-4 text-sm focus:outline-none focus:border-primary/50 transition-all focus:bg-white/[0.07]"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-text-vault/20 hover:text-text-vault/50 -translate-y-px"
+                  className="absolute inset-y-0 cursor-pointer right-0 pr-4 flex items-center text-text-vault/20 hover:text-text-vault/50 -translate-y-px"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
-            <button className="w-full primary-gradient text-on-primary py-4 rounded-xl font-bold text-sm btn-elegant flex items-center justify-center gap-2 mt-4 cursor-pointer">
+            <button type="submit" disabled={loading} className="w-full primary-gradient text-on-primary py-4 rounded-xl font-bold text-sm btn-elegant flex items-center justify-center gap-2 mt-4 cursor-pointer">
               Access Vault
               <ArrowRight className="w-4 h-4" />
             </button>
-            <button className="w-full bg-white/5 hover:bg-white/10 border border-white/10 py-3.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer">
+            <button type="button" className="w-full bg-white/5 hover:bg-white/10 border border-white/10 py-3.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer">
               <Image src="/google.png" alt="Google" width={18} height={18} />
               Continue with Google
             </button>
