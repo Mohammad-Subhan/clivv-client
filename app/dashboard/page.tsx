@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Search,
   Copy,
@@ -8,56 +8,32 @@ import {
   Eye,
   EyeOff,
   Plus,
-  ShieldAlert
+  ShieldAlert,
+  Trash2
 } from "lucide-react";
 import { VaultModal } from "@/components/VaultModal";
+import api from "@/utils/api";
+import toast from "react-hot-toast";
 
 interface VaultItem {
-  id: number;
+  _id: string;
   name: string;
-  url: string;
+  website: string;
   username: string;
   password: string;
-  icon: string;
-  strength: string;
+  logo: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-const initialVaultItems: VaultItem[] = [
-  {
-    id: 1,
-    name: "Google Account",
-    url: "google.com",
-    username: "alex.v@protonmail.com",
-    password: "Password@123",
-    icon: "/google.png",
-    strength: "Strong"
-  },
-  {
-    id: 2,
-    name: "GitHub Personal",
-    url: "github.com",
-    username: "obsidian_vault_01",
-    password: "SecureGitHub789!",
-    icon: "/github.png",
-    strength: "Strong"
-  },
-  {
-    id: 3,
-    name: "Netflix Family",
-    url: "netflix.com",
-    username: "home_stream@v-vault.io",
-    password: "NetflixPassword22",
-    icon: "/netflix.png",
-    strength: "Medium"
-  }
-];
-
 export default function VaultPage() {
-  const [items, setItems] = useState<VaultItem[]>(initialVaultItems);
+  const [items, setItems] = useState<VaultItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [visiblePasswords, setVisiblePasswords] = useState<Record<number, boolean>>({});
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<VaultItem | null>(null);
+  const [editingItem, setEditingItem] = useState<Partial<VaultItem> | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<VaultItem | null>(null);
+  const [loading, setLoading] = useState(false);
 
   // Memoized search logic for performance
   const filteredItems = useMemo(() => {
@@ -66,19 +42,19 @@ export default function VaultPage() {
 
     return items.filter(item =>
       item.name.toLowerCase().includes(query) ||
-      item.url.toLowerCase().includes(query) ||
+      item.website.toLowerCase().includes(query) ||
       item.username.toLowerCase().includes(query)
     );
   }, [items, searchQuery]);
 
-  const togglePasswordVisibility = (id: number) => {
+  const togglePasswordVisibility = (id: string) => {
     setVisiblePasswords((prev) => ({
       ...prev,
       [id]: !prev[id]
     }));
   };
 
-  const handleAddNew = () => {
+  const handleAddNewModal = () => {
     setEditingItem(null);
     setIsModalOpen(true);
   };
@@ -88,23 +64,40 @@ export default function VaultPage() {
     setIsModalOpen(true);
   };
 
-  const handleSave = (data: Partial<VaultItem>) => {
-    if (editingItem) {
-      setItems(items.map(item => item.id === editingItem.id ? { ...item, ...data } as VaultItem : item));
-    } else {
-      const newItem: VaultItem = {
-        id: items.length + 1,
-        name: data.name || "Untitled",
-        url: data.url || "",
-        username: data.username || "",
-        password: data.password || "",
-        icon: data.icon || "/vercel.svg",
-        strength: "Strong"
-      };
-      setItems([...items, newItem]);
+  const handleSave = async () => {
+    setLoading(true);
+
+    try {
+      const response = await api.get("/api/secret");
+      setItems(response.data);
+    } catch (error: any) {
+      toast.error(error.response.data.message || "Failed to fetch secrets");
+    } finally {
+      setLoading(false);
     }
-    setIsModalOpen(false);
-  };
+  }
+
+  const handleDeleteItem = async (id: string) => {
+    setLoading(true);
+    try {
+      const response = await api.delete(`/api/secret/${id}`);
+      toast.success(response.data.message);
+      handleSave();
+      setItemToDelete(null);
+    } catch (error: any) {
+      toast.error(error.response.data.message || "Failed to delete secret");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    handleSave();
+  }, []);
+
+  const getIconFromWebsite = (website: string) => {
+    return `https://img.logo.dev/${website}?token=${process.env.NEXT_PUBLIC_LOGO_DEV_PUBLISHABLE_KEY}&theme=dark&format=webp`
+  }
 
   return (
     <>
@@ -125,7 +118,7 @@ export default function VaultPage() {
             />
           </div>
           <button
-            onClick={handleAddNew}
+            onClick={handleAddNewModal}
             className="w-full md:w-auto primary-gradient text-on-primary px-6 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 btn-elegant whitespace-nowrap cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
             <Plus className="w-4 h-4" />
@@ -161,28 +154,33 @@ export default function VaultPage() {
         )}
 
         {/* Vault items */}
-        {filteredItems.map((item) => (
-          <div key={item.id} className="grid grid-cols-12 items-center rounded-2xl px-6 py-4 bg-white/3 border border-white/5 hover:bg-white/6 hover:border-primary/20 transition-all group animate-in fade-in slide-in-from-bottom-2 duration-300">
+        {filteredItems.map((item: VaultItem) => (
+          <div key={item._id} className="grid grid-cols-12 items-center rounded-2xl px-6 py-4 bg-white/3 border border-white/5 hover:bg-white/6 hover:border-primary/20 transition-all group animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="col-span-4 flex items-center gap-4">
               <div className="w-10 h-10 bg-black/40 rounded-xl flex items-center justify-center border border-white/5 shadow-inner overflow-hidden">
-                <img
-                  src={item.icon}
+                {item.logo && <img
+                  src={item.logo}
                   alt={item.name}
-                  width={20}
-                  height={20}
-                  className={item.icon.includes("github") ? "invert" : ""}
-                />
+                  width={40}
+                  height={40}
+                />}
+                {!item.logo && <img
+                  src={getIconFromWebsite(item.website)}
+                  alt={item.name}
+                  width={30}
+                  height={30}
+                />}
               </div>
               <div>
                 <h3 className="font-bold text-sm">{item.name}</h3>
-                <p className="text-[10px] text-text-vault/40">{item.url}</p>
+                <p className="text-[10px] text-text-vault/40">{item.website}</p>
               </div>
             </div>
             <div className="col-span-3 text-xs text-text-vault/60 font-medium truncate pr-4">
               {item.username}
             </div>
             <div className="col-span-3 pr-4">
-              {visiblePasswords[item.id] ? (
+              {visiblePasswords[item._id] ? (
                 <span className="text-sm font-mono text-white tracking-normal break-all">{item.password}</span>
               ) : (
                 <span className="text-lg text-primary/40 tracking-widest font-mono">••••••••••••</span>
@@ -190,11 +188,11 @@ export default function VaultPage() {
             </div>
             <div className="col-span-2 flex justify-end gap-2">
               <button
-                onClick={() => togglePasswordVisibility(item.id)}
+                onClick={() => togglePasswordVisibility(item._id)}
                 className="p-2 text-text-vault/20 hover:text-primary hover:bg-primary/10 rounded-lg transition-all cursor-pointer"
                 title="Toggle Visibility"
               >
-                {visiblePasswords[item.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {visiblePasswords[item._id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
               <button
                 className="p-2 text-text-vault/20 hover:text-primary hover:bg-primary/10 rounded-lg transition-all cursor-pointer"
@@ -209,6 +207,13 @@ export default function VaultPage() {
               >
                 <Edit className="w-4 h-4" />
               </button>
+              <button
+                onClick={() => setItemToDelete(item)}
+                className="p-2 text-text-vault/20 hover:text-error-container hover:bg-error-container/10 rounded-lg transition-all cursor-pointer"
+                title="Delete Item"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
           </div>
         ))}
@@ -218,8 +223,47 @@ export default function VaultPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSave}
-        initialData={editingItem}
+        initialData={editingItem ? {
+          _id: editingItem?._id || "",
+          name: editingItem?.name || "",
+          website: editingItem?.website || "",
+          username: editingItem?.username || "",
+          password: editingItem?.password || "",
+          logo: editingItem?.logo || "",
+        } : null}
       />
+
+      {itemToDelete && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={() => setItemToDelete(null)}
+          ></div>
+          <div className="relative w-full max-w-md bg-background-vault border border-white/10 rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 pointer-events-auto">
+            <div className="p-8 text-center">
+              <h2 className="text-2xl font-bold tracking-tight mb-2">Delete Password?</h2>
+              <p className="text-text-vault/40 text-sm mb-8">
+                Are you sure you want to delete the password for <strong className="text-white">{itemToDelete.name}</strong>? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setItemToDelete(null)}
+                  className="flex-1 bg-white/5 hover:bg-white/10 border border-white/5 text-text-vault/60 py-3.5 rounded-xl text-sm font-bold transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDeleteItem(itemToDelete._id)}
+                  disabled={loading}
+                  className="flex-1 bg-error-container hover:bg-error-container/60 text-white py-3.5 rounded-xl font-bold text-sm transition-all cursor-pointer shadow-lg shadow-error-container/20 disabled:opacity-50"
+                >
+                  {loading ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

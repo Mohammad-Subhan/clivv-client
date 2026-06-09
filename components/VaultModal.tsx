@@ -3,21 +3,22 @@
 import { useState, useEffect, useRef } from "react";
 import { X, Globe, User, Lock, ImageIcon, Plus, Upload, Eye, EyeOff } from "lucide-react";
 import api from "@/utils/api";
+import toast from "react-hot-toast";
 
-interface VaultItem {
-  id: number;
+interface NewVaultItem {
+  _id: string;
   name: string;
-  url: string;
+  website: string;
   username: string;
   password: string;
-  icon: string;
+  logo: string;
 }
 
 interface VaultModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (item: Partial<VaultItem>) => void;
-  initialData?: VaultItem | null;
+  onSave: () => void;
+  initialData?: NewVaultItem | null;
 }
 
 export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalProps) {
@@ -28,25 +29,24 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [apiDomain, setApiDomain] = useState("");
   const [formData, setFormData] = useState({
     name: "",
-    url: "",
+    website: "",
     username: "",
     password: "",
     confirmPassword: "",
-    icon: ""
+    logo: ""
   });
 
   useEffect(() => {
     const fetchLogos = async () => {
-      if (!formData.url || formData.url.length < 2 || !showDropdown) {
+      if (!formData.website || formData.website.length < 2 || !showDropdown) {
         setSearchResults([]);
         return;
       }
       setIsSearching(true);
       try {
-        const res = await fetch(`https://api.logo.dev/search?q=${formData.url}`, {
+        const res = await fetch(`https://api.logo.dev/search?q=${formData.website}`, {
           headers: {
             Authorization: `Bearer ${process.env.NEXT_PUBLIC_LOGO_DEV_SECRET_KEY}`
           }
@@ -65,29 +65,27 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [formData.url, showDropdown]);
+  }, [formData.website, showDropdown]);
 
   useEffect(() => {
     if (initialData) {
       setFormData({
         name: initialData.name,
-        url: initialData.url,
+        website: initialData.website,
         username: initialData.username,
         password: initialData.password,
         confirmPassword: initialData.password,
-        icon: initialData.icon
+        logo: initialData.logo
       });
-      setApiDomain(initialData.url);
     } else {
       setFormData({
         name: "",
-        url: "",
+        website: "",
         username: "",
         password: "",
         confirmPassword: "",
-        icon: ""
+        logo: ""
       });
-      setApiDomain("");
     }
     setShowPassword(false);
     setShowConfirmPassword(false);
@@ -98,8 +96,7 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormData({ ...formData, icon: reader.result as string });
-        setApiDomain("");
+        setFormData({ ...formData, logo: reader.result as string });
       };
       reader.readAsDataURL(file);
     }
@@ -112,22 +109,21 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+      toast.error("Passwords do not match!");
       return;
     }
 
     try {
       setIsSubmitting(true);
-
       const submitData = new FormData();
       submitData.append("name", formData.name);
-      submitData.append("website", formData.url);
+      submitData.append("website", formData.website);
       submitData.append("username", formData.username);
       submitData.append("password", formData.password);
 
-      if (formData.icon && formData.icon.startsWith("data:")) {
+      if (formData && formData.logo.startsWith("data:")) {
         try {
-          const res = await fetch(formData.icon);
+          const res = await fetch(formData.logo);
           const blob = await res.blob();
           submitData.append("logo", blob, "logo.png");
         } catch (e) {
@@ -136,21 +132,42 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
       }
 
       if (!initialData) {
-        await api.post("/api/secret/create", submitData, {
+        const response = await api.post("/api/secret/create", submitData, {
           headers: {
             "Content-Type": "multipart/form-data",
           }
         });
+        toast.success(response.data.message || "Secret created successfully!");
       } else {
-        // Note: Update endpoint logic can be added here
-        console.log("Edit logic triggered (no API defined yet)");
-      }
+        const editData = new FormData();
+        editData.append("name", formData.name);
+        editData.append("website", formData.website);
+        editData.append("username", formData.username);
+        editData.append("password", formData.password);
 
-      onSave(formData);
+        if (formData && formData.logo.startsWith("data:")) {
+          try {
+            const res = await fetch(formData.logo);
+            const blob = await res.blob();
+            editData.append("logo", blob, "logo.png");
+          } catch (e) {
+            console.warn("Could not fetch logo blob", e);
+          }
+        }
+
+        const response = await api.put(`/api/secret/${initialData?._id}`, editData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          }
+        });
+        toast.success(response.data.message || "Secret updated successfully!");
+      }
     } catch (error) {
       console.error("Failed to save secret:", error);
       alert("Failed to save secret. Please try again.");
     } finally {
+      onClose();
+      onSave();
       setIsSubmitting(false);
     }
   };
@@ -212,15 +229,9 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
                   <input
                     type="text"
                     placeholder="netflix.com"
-                    value={formData.url}
+                    value={formData.website}
                     onChange={(e) => {
-                      const newUrl = e.target.value;
-                      if (apiDomain && newUrl !== apiDomain && formData.icon?.includes("logo.dev")) {
-                        setFormData({ ...formData, url: newUrl, icon: "" });
-                        setApiDomain("");
-                      } else {
-                        setFormData({ ...formData, url: newUrl });
-                      }
+                      setFormData({ ...formData, website: e.target.value, logo: "" });
                       setShowDropdown(true);
                     }}
                     onFocus={() => setShowDropdown(true)}
@@ -245,15 +256,14 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
                                   e.preventDefault();
                                   setFormData(prev => ({
                                     ...prev,
-                                    url: item.domain,
-                                    icon: `${item.logo_url}&theme=dark&format=png`,
+                                    website: item.domain,
+                                    logo: `${item.logo_url}&theme=dark&format=webp`,
                                     name: prev.name ? prev.name : item.name
                                   }));
-                                  setApiDomain(item.domain);
                                   setShowDropdown(false);
                                 }}
                               >
-                                <img src={`${item.logo_url}&theme=dark&format=png`} alt={item.name} className="w-6 h-6 object-contain rounded-md bg-white/5" />
+                                <img src={`${item.logo_url}&theme=dark&format=webp`} alt={item.name} className="w-6 h-6 object-contain rounded-md bg-white/5" />
                                 <div>
                                   <div className="text-sm font-bold text-white">{item.name}</div>
                                   <div className="text-xs text-text-vault/40">{item.domain}</div>
@@ -342,14 +352,14 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
                 onClick={triggerFileInput}
                 className="group relative w-full h-28 bg-white/5 border-2 border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-white/8 hover:border-primary/40 transition-all overflow-hidden"
               >
-                {formData.icon ? (
+                {formData.logo ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity z-10 rounded-2xl">
                     <Upload className="w-6 h-6 text-white" />
                   </div>
                 ) : null}
 
-                {formData.icon ? (
-                  <img src={formData.icon} alt="Logo Preview" className="w-full h-full object-contain p-4" />
+                {formData.logo ? (
+                  <img src={formData.logo} alt="Logo Preview" className="w-full h-full object-contain p-4" />
                 ) : (
                   <>
                     <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-text-vault/20 group-hover:text-primary transition-colors">
