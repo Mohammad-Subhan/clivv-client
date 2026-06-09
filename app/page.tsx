@@ -26,7 +26,7 @@ export default function Home() {
 
   useEffect(() => {
     const sections = ["home", "features", "testimonials", "download"];
-    
+
     const observerOptions = {
       root: null,
       rootMargin: "-20% 0px -70% 0px",
@@ -65,11 +65,10 @@ export default function Home() {
 
   const getNavLinkClass = (id: string) => {
     const isActive = activeSection === id;
-    return `transition-all duration-300 ${
-      isActive 
-        ? "text-primary border-b border-secondary-container pb-1" 
+    return `transition-all duration-300 ${isActive
+        ? "text-primary border-b border-secondary-container pb-1"
         : "text-text-vault/70 hover:text-primary"
-    }`;
+      }`;
   };
 
   return (
@@ -81,29 +80,29 @@ export default function Home() {
             Clivv
           </div>
           <div className="hidden md:flex items-center gap-8 font-medium text-sm tracking-tight h-full pt-1">
-            <a 
-              href="#home" 
+            <a
+              href="#home"
               className={getNavLinkClass("home")}
               onClick={(e) => scrollToSection(e, "home")}
             >
               Home
             </a>
-            <a 
-              href="#features" 
+            <a
+              href="#features"
               className={getNavLinkClass("features")}
               onClick={(e) => scrollToSection(e, "features")}
             >
               Features
             </a>
-            <a 
-              href="#testimonials" 
+            <a
+              href="#testimonials"
               className={getNavLinkClass("testimonials")}
               onClick={(e) => scrollToSection(e, "testimonials")}
             >
               Testimonials
             </a>
-            <a 
-              href="#download" 
+            <a
+              href="#download"
               className={getNavLinkClass("download")}
               onClick={(e) => scrollToSection(e, "download")}
             >
@@ -161,7 +160,7 @@ export default function Home() {
             {/* Main Card */}
             <div className="relative z-20 glass-panel-heavy glass-border-shine p-8 rounded-2xl w-full max-w-md rotate-2">
               <div className="flex justify-between items-center mb-8">
-                <h3 className="font-bold text-lg">My Vault</h3>
+                <h3 className="font-bold text-lg">My Secrets</h3>
               </div>
               <div className="space-y-4">
                 <div className="flex items-center gap-4 p-3 bg-white/5 rounded-xl border border-white/5">
@@ -402,7 +401,7 @@ export default function Home() {
               </div>
               <h3 className="text-lg font-bold mb-3">Biometric Lock</h3>
               <p className="text-sm text-white/40 mb-8 leading-relaxed">
-                Unlock your entire vault using FaceID, TouchID, or Windows Hello
+                Unlock all your secrets using FaceID, TouchID, or Windows Hello
                 for instant access.
               </p>
             </div>

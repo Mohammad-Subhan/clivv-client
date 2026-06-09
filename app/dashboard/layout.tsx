@@ -21,7 +21,7 @@ export default function DashboardLayout({
   const dispatch = useDispatch();
   // Helper to determine page title based on route
   const getPageTitle = () => {
-    if (pathname === "/dashboard") return "My Vault";
+    if (pathname === "/dashboard") return "My Secrets";
     if (pathname === "/dashboard/settings") return "Settings";
     if (pathname === "/dashboard/profile") return "Profile";
     if (pathname === "/dashboard/trash") return "Trash";

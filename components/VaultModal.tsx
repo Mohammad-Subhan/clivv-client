@@ -188,7 +188,7 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
           <div className="flex justify-between items-center mb-8">
             <div>
               <h2 className="text-2xl font-bold tracking-tight">
-                {initialData ? "Edit Vault Item" : "Add New Secret"}
+                {initialData ? "Edit Secret" : "Add New Secret"}
               </h2>
               <p className="text-text-vault/40 text-sm mt-1">
                 Protect your credentials with Clivv.

@@ -103,7 +103,7 @@ export default function VaultPage() {
     <>
       <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h2 className="text-4xl font-bold tracking-tight mb-2">My Vaults</h2>
+          <h2 className="text-4xl font-bold tracking-tight mb-2">My Secrets</h2>
           <p className="text-text-vault/40 text-sm max-w-md">Securely managing your digital identity with military-grade obsidian encryption.</p>
         </div>
         <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">

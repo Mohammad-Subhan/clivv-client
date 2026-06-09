@@ -7,7 +7,7 @@ export default function SettingsPage() {
     <>
       <div className="mb-10">
         <h2 className="text-4xl font-bold tracking-tight mb-2">Settings</h2>
-        <p className="text-text-vault/40 text-sm max-w-md">Manage your vault preference and security protocols.</p>
+        <p className="text-text-vault/40 text-sm max-w-md">Manage your secret preferences and security protocols.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -29,7 +29,7 @@ export default function SettingsPage() {
               </div>
             </div>
             <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 text-text-vault/20">
-              <span className="text-sm font-medium">Auto-lock Vault</span>
+              <span className="text-sm font-medium">Auto-lock Secrets</span>
               <span className="text-xs">Immediately</span>
             </div>
           </div>

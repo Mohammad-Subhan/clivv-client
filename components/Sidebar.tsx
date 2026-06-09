@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { name: "Vault", href: "/dashboard", icon: LayoutGrid }
+  { name: "Secrets", href: "/dashboard", icon: LayoutGrid }
 ];
 
 const secondaryNavItems = [
