@@ -3,12 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Lock,
-  Star,
-  User,
-  Briefcase,
-  Trash2,
-  Plus,
   Settings,
   LayoutGrid,
   UserCircle
@@ -16,11 +10,6 @@ import {
 
 const navItems = [
   { name: "Secrets", href: "/dashboard", icon: LayoutGrid }
-];
-
-const secondaryNavItems = [
-  { name: "Profile", href: "/dashboard/profile", icon: UserCircle },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings }
 ];
 
 export function Sidebar() {
@@ -54,26 +43,6 @@ export function Sidebar() {
             </Link>
           );
         })}
-
-        <div className="pt-6 mt-6 border-t border-white/5">
-          <div className="text-[10px] uppercase tracking-widest text-text-vault/20 font-bold px-4 mb-2">System</div>
-          {secondaryNavItems.map((item) => {
-            const Active = isActive(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${Active
-                  ? "bg-primary/10 text-primary"
-                  : "text-text-vault/40 hover:text-text-vault/80 hover:bg-white/5"
-                  }`}
-              >
-                <item.icon className="w-4 h-4" />
-                <span className="text-sm font-medium">{item.name}</span>
-              </Link>
-            );
-          })}
-        </div>
       </nav>
     </aside>
   );

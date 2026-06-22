@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "@/store/authSlice";
+import { setSession } from "@/services/session.service";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -29,10 +30,11 @@ export default function LoginPage() {
       dispatch(
         setCredentials({ user: res.data.user, token: res.data.access_token })
       );
+      setSession({ pass: password, saltValue: res.data.user.salt });
       toast.success(res.data.message || "Login successful");
       router.push("/dashboard");
     } catch (err: any) {
-      const errorMessage = err.response.data.message;
+      const errorMessage = err.response?.data?.message;
       toast.error(Array.isArray(errorMessage) ? errorMessage[0] : errorMessage || "Something went wrong");
     } finally {
       setLoading(false)

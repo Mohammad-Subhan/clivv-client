@@ -4,38 +4,37 @@ import { useState, useEffect, useRef } from "react";
 import { X, Globe, User, Lock, ImageIcon, Plus, Upload, Eye, EyeOff } from "lucide-react";
 import api from "@/utils/api";
 import toast from "react-hot-toast";
+import { encryptData } from "@/services/crypto.service";
 
-interface NewVaultItem {
+interface ExistingSecretItem {
   _id: string;
   name: string;
   website: string;
   username: string;
-  password: string;
   logo: string;
+  password?: string;
 }
 
-interface VaultModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+interface UpdateSecretModalProps {
   onSave: () => void;
-  initialData?: NewVaultItem | null;
+  onClose: () => void;
+  existingData: ExistingSecretItem | null;
 }
 
-export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalProps) {
+export function UpdateSecretModal({ onSave, onClose, existingData }: UpdateSecretModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
-    website: "",
-    username: "",
-    password: "",
-    confirmPassword: "",
-    logo: ""
+    name: existingData?.name || "",
+    website: existingData?.website || "",
+    username: existingData?.username || "",
+    password: existingData?.password || "",
+    masterPassword: "",
+    logo: existingData?.logo || ""
   });
 
   useEffect(() => {
@@ -67,30 +66,6 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
     return () => clearTimeout(timer);
   }, [formData.website, showDropdown]);
 
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        name: initialData.name,
-        website: initialData.website,
-        username: initialData.username,
-        password: initialData.password,
-        confirmPassword: initialData.password,
-        logo: initialData.logo
-      });
-    } else {
-      setFormData({
-        name: "",
-        website: "",
-        username: "",
-        password: "",
-        confirmPassword: "",
-        logo: ""
-      });
-    }
-    setShowPassword(false);
-    setShowConfirmPassword(false);
-  }, [initialData, isOpen]);
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -108,10 +83,6 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match!");
-      return;
-    }
 
     try {
       setIsSubmitting(true);
@@ -119,7 +90,15 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
       submitData.append("name", formData.name);
       submitData.append("website", formData.website);
       submitData.append("username", formData.username);
-      submitData.append("password", formData.password);
+
+      try {
+        const { encryptedData, iv } = await encryptData(formData.password);
+        submitData.append("encryptedPassword", encryptedData);
+        submitData.append("iv", iv);
+      } catch (error) {
+        toast.error("Failed to encrypt password. Please try again.");
+        return;
+      }
 
       if (formData && formData.logo.startsWith("data:")) {
         try {
@@ -131,48 +110,23 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
         }
       }
 
-      if (!initialData) {
-        const response = await api.post("/api/secret/create", submitData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          }
-        });
-        toast.success(response.data.message || "Secret created successfully!");
-      } else {
-        const editData = new FormData();
-        editData.append("name", formData.name);
-        editData.append("website", formData.website);
-        editData.append("username", formData.username);
-        editData.append("password", formData.password);
-
-        if (formData && formData.logo.startsWith("data:")) {
-          try {
-            const res = await fetch(formData.logo);
-            const blob = await res.blob();
-            editData.append("logo", blob, "logo.png");
-          } catch (e) {
-            console.warn("Could not fetch logo blob", e);
-          }
-        }
-
-        const response = await api.put(`/api/secret/${initialData?._id}`, editData, {
+      try {
+        const response = await api.patch(`/api/secret/${existingData?._id}`, submitData, {
           headers: {
             "Content-Type": "multipart/form-data",
           }
         });
         toast.success(response.data.message || "Secret updated successfully!");
+        onSave();
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || "Failed to update secret. Please try again.")
       }
-    } catch (error) {
-      console.error("Failed to save secret:", error);
-      alert("Failed to save secret. Please try again.");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to update secret. Please try again.")
     } finally {
-      onClose();
-      onSave();
       setIsSubmitting(false);
     }
   };
-
-  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
@@ -183,25 +137,24 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
       ></div>
 
       {/* Modal Card */}
-      <div className="relative w-full max-w-lg bg-background-vault border border-white/10 rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 pointer-events-auto max-h-[90vh] overflow-y-auto hide-scrollbar">
-        <div className="p-8">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight">
-                {initialData ? "Edit Secret" : "Add New Secret"}
-              </h2>
-              <p className="text-text-vault/40 text-sm mt-1">
-                Protect your credentials with Clivv.
-              </p>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-white/5 rounded-xl text-text-vault/40 transition-all cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
+      <div className="p-8 max-h-[90vh] relative w-full max-w-lg rounded-xl bg-background-vault border border-white/10 shadow-2xl">
+        <div className="flex justify-between items-center pb-4">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">
+              Add New Secret
+            </h2>
+            <p className="text-text-vault/40 text-sm mt-1">
+              Protect your credentials with Clivv.
+            </p>
           </div>
-
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-white/5 rounded-xl text-text-vault/40 transition-all cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="overflow-y-scroll max-h-[70vh] animate-in zoom-in-95 duration-200 pointer-events-auto [&::-webkit-scrollbar]:w-0 mt-4">
           <form className="space-y-5" onSubmit={handleSubmit}>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1">
@@ -296,53 +249,27 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-text-vault/20 uppercase tracking-widest ml-1">Password</label>
-                <div className="relative border-none group">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-vault/20 group-focus-within:text-primary transition-colors">
-                    <Lock className="w-3.5 h-3.5" />
-                  </span>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••••••"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-10 pr-12 text-sm focus:outline-none focus:border-primary/50 transition-all"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-text-vault/20 hover:text-text-vault/50 transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-text-vault/20 uppercase tracking-widest ml-1">Confirm Password</label>
-                <div className="relative border-none group">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-vault/20 group-focus-within:text-primary transition-colors">
-                    <Lock className="w-3.5 h-3.5" />
-                  </span>
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="••••••••••••"
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-10 pr-12 text-sm focus:outline-none focus:border-primary/50 transition-all"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-text-vault/20 hover:text-text-vault/50 transition-colors"
-                  >
-                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold text-text-vault/20 uppercase tracking-widest ml-1">Password</label>
+              <div className="relative border-none group">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-vault/20 group-focus-within:text-primary transition-colors">
+                  <Lock className="w-3.5 h-3.5" />
+                </span>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••••••"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-10 pr-12 text-sm focus:outline-none focus:border-primary/50 transition-all"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-text-vault/20 hover:text-text-vault/50 transition-colors cursor-pointer"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
@@ -392,7 +319,7 @@ export function VaultModal({ isOpen, onClose, onSave, initialData }: VaultModalP
                 disabled={isSubmitting}
                 className="flex-2 primary-gradient text-on-primary py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 btn-elegant cursor-pointer shadow-lg shadow-primary/20 disabled:opacity-50"
               >
-                {isSubmitting ? "Saving..." : (initialData ? "Update Item" : "Secure Secret")}
+                {isSubmitting ? "Saving..." : "Secure Secret"}
               </button>
             </div>
           </form>

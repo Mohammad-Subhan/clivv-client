@@ -9,30 +9,51 @@ import {
   EyeOff,
   Plus,
   ShieldAlert,
-  Trash2
+  Trash2,
+  RefreshCw
 } from "lucide-react";
-import { VaultModal } from "@/components/VaultModal";
+import { CreateSecretModal } from "@/components/CreateSecretModal";
 import api from "@/utils/api";
 import toast from "react-hot-toast";
+import { UpdateSecretModal } from "@/components/UpdateSecretModal";
+import { decryptData } from "@/services/crypto.service";
 
-interface VaultItem {
+interface SecretItem {
   _id: string;
   name: string;
   website: string;
   username: string;
   password: string;
   logo: string;
-  createdAt: string;
-  updatedAt: string;
+}
+
+interface SecretResponseItem {
+  _id: string;
+  name: string;
+  website: string;
+  username: string;
+  encryptedPassword: string;
+  iv: string;
+  authTag: string;
+  logo: string;
+}
+
+interface EditSecretData {
+  _id: string;
+  name: string;
+  website: string;
+  username: string;
+  logo: string;
 }
 
 export default function VaultPage() {
-  const [items, setItems] = useState<VaultItem[]>([]);
+  const [items, setItems] = useState<SecretItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<Partial<VaultItem> | null>(null);
-  const [itemToDelete, setItemToDelete] = useState<VaultItem | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingItem, setEditingItem] = useState<EditSecretData | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<SecretItem | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Memoized search logic for performance
@@ -55,23 +76,35 @@ export default function VaultPage() {
   };
 
   const handleAddNewModal = () => {
-    setEditingItem(null);
-    setIsModalOpen(true);
+    setIsEditing(false);
+    setIsCreating(true);
   };
 
-  const handleEditItem = (item: VaultItem) => {
-    setEditingItem(item);
-    setIsModalOpen(true);
+  const handleEditItem = (item: SecretItem) => {
+    setEditingItem({
+      _id: item._id,
+      name: item.name,
+      website: item.website,
+      username: item.username,
+      logo: item.logo
+    });
+    setIsEditing(true);
   };
 
   const handleSave = async () => {
+    setIsCreating(false);
+    setIsEditing(false);
     setLoading(true);
-
     try {
       const response = await api.get("/api/secret");
-      setItems(response.data);
+      const decryptedData = await Promise.all(response.data.map(async (item: SecretResponseItem) => ({
+        ...item,
+        password: await decryptData({ encryptedData: item.encryptedPassword, iv: item.iv })
+      })))
+      setItems(decryptedData);
     } catch (error: any) {
-      toast.error(error.response.data.message || "Failed to fetch secrets");
+      const errorMessage = error.response?.data?.message;
+      toast.error(errorMessage || "Failed to fetch secrets");
     } finally {
       setLoading(false);
     }
@@ -124,6 +157,12 @@ export default function VaultPage() {
             <Plus className="w-4 h-4" />
             Add Password
           </button>
+          <button
+            onClick={handleSave}
+            className="w-full md:w-auto px-3 py-3 bg-white/10 rounded-xl font-bold text-sm flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
@@ -154,7 +193,7 @@ export default function VaultPage() {
         )}
 
         {/* Vault items */}
-        {filteredItems.map((item: VaultItem) => (
+        {filteredItems.map((item: SecretItem) => (
           <div key={item._id} className="grid grid-cols-12 items-center rounded-2xl px-6 py-4 bg-white/3 border border-white/5 hover:bg-white/6 hover:border-primary/20 transition-all group animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="col-span-4 flex items-center gap-4">
               <div className="w-10 h-10 bg-black/40 rounded-xl flex items-center justify-center border border-white/5 shadow-inner overflow-hidden">
@@ -219,7 +258,28 @@ export default function VaultPage() {
         ))}
       </div>
 
-      <VaultModal
+      {isCreating && (
+        <CreateSecretModal
+          onClose={() => setIsCreating(false)}
+          onSave={handleSave}
+        />
+      )}
+
+      {isEditing && (
+        <UpdateSecretModal
+          onClose={() => setIsEditing(false)}
+          onSave={handleSave}
+          existingData={editingItem ? {
+            _id: editingItem._id,
+            name: editingItem.name,
+            website: editingItem.website,
+            username: editingItem.username,
+            logo: editingItem.logo,
+          } : null}
+        />
+      )}
+
+      {/* <VaultModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSave}
@@ -231,7 +291,7 @@ export default function VaultPage() {
           password: editingItem?.password || "",
           logo: editingItem?.logo || "",
         } : null}
-      />
+      /> */}
 
       {itemToDelete && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4">

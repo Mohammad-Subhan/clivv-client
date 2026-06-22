@@ -6,8 +6,9 @@ import Link from "next/link";
 import { Sidebar } from "@/components/Sidebar";
 import { ChevronRight, Settings, LogOut, User as UserIcon } from "lucide-react";
 import AuthGuard from "@/components/AuthGuard";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { logout } from "@/store/authSlice";
+import { RootState } from "@/store/store";
 
 export default function DashboardLayout({
   children,
@@ -19,6 +20,8 @@ export default function DashboardLayout({
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const dispatch = useDispatch();
+
+  const { user } = useSelector((state: RootState) => state.auth);
   // Helper to determine page title based on route
   const getPageTitle = () => {
     if (pathname === "/dashboard") return "My Secrets";
@@ -47,15 +50,6 @@ export default function DashboardLayout({
             </div>
 
             <div className="flex items-center gap-6">
-              <div className="flex items-center gap-3">
-                <Link
-                  href="/dashboard/settings"
-                  className="p-2 text-text-vault/40 hover:text-primary transition-all cursor-pointer"
-                >
-                  <Settings className="w-4 h-4" />
-                </Link>
-              </div>
-
               {/* Profile Dropdown Container */}
               <div className="relative">
                 <button
@@ -78,18 +72,9 @@ export default function DashboardLayout({
                     ></div>
                     <div className="absolute right-0 mt-3 w-56 bg-black border border-white/10 rounded-2xl shadow-2xl z-20 py-2 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
                       <div className="px-4 py-3 border-b border-white/10 mb-1">
-                        <p className="text-xs font-bold text-white">Alex Volkov</p>
-                        <p className="text-[10px] text-white/30 truncate">alex.v@protonmail.com</p>
+                        <p className="text-xs font-bold text-white">{user?.name}</p>
+                        <p className="text-[10px] text-white/30 truncate">{user?.email}</p>
                       </div>
-
-                      <Link
-                        href="/dashboard/profile"
-                        onClick={() => setShowProfileMenu(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-vault/60 hover:text-white hover:bg-white/7 transition-all"
-                      >
-                        <UserIcon className="w-4 h-4" />
-                        View Profile
-                      </Link>
 
                       <button
                         onClick={handleLogout}
