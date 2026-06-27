@@ -43,6 +43,7 @@ interface EditSecretData {
   name: string;
   website: string;
   username: string;
+  password: string;
   logo: string;
 }
 
@@ -86,6 +87,7 @@ export default function VaultPage() {
       name: item.name,
       website: item.website,
       username: item.username,
+      password: item.password,
       logo: item.logo
     });
     setIsEditing(true);
@@ -102,8 +104,8 @@ export default function VaultPage() {
         password: await decryptData({ encryptedData: item.encryptedPassword, iv: item.iv })
       })))
       setItems(decryptedData);
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message;
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || err.message;
       toast.error(errorMessage || "Failed to fetch secrets");
     } finally {
       setLoading(false);
@@ -115,10 +117,10 @@ export default function VaultPage() {
     try {
       const response = await api.delete(`/api/secret/${id}`);
       toast.success(response.data.message);
-      handleSave();
+      await handleSave();
       setItemToDelete(null);
     } catch (error: any) {
-      toast.error(error.response.data.message || "Failed to delete secret");
+      toast.error(error.response?.data?.message || "Failed to delete secret");
     } finally {
       setLoading(false);
     }
@@ -181,14 +183,30 @@ export default function VaultPage() {
             <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-4">
               <ShieldAlert className="w-8 h-8 text-text-vault/20" />
             </div>
-            <h3 className="text-lg font-bold text-white mb-1">No matches found</h3>
-            <p className="text-text-vault/40 text-sm">We couldn't find any items matching "{searchQuery}"</p>
-            <button
-              onClick={() => setSearchQuery("")}
-              className="mt-6 text-primary text-sm font-bold hover:underline underline-offset-4"
-            >
-              Clear search query
-            </button>
+            {searchQuery.trim() ? (
+              <>
+                <h3 className="text-lg font-bold text-white mb-1">No matches found</h3>
+                <p className="text-text-vault/40 text-sm">We couldn&apos;t find any items matching &quot;{searchQuery}&quot;</p>
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="mt-6 text-primary text-sm font-bold hover:underline underline-offset-4"
+                >
+                  Clear search query
+                </button>
+              </>
+            ) : (
+              <>
+                <h3 className="text-lg font-bold text-white mb-1">Your vault is empty</h3>
+                <p className="text-text-vault/40 text-sm">Add your first password to get started.</p>
+                <button
+                  onClick={handleAddNewModal}
+                  className="mt-6 primary-gradient text-on-primary px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 btn-elegant cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Password
+                </button>
+              </>
+            )}
           </div>
         )}
 
@@ -234,6 +252,10 @@ export default function VaultPage() {
                 {visiblePasswords[item._id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
               <button
+                onClick={() => {
+                  navigator.clipboard.writeText(item.password);
+                  toast.success("Copied!");
+                }}
                 className="p-2 text-text-vault/20 hover:text-primary hover:bg-primary/10 rounded-lg transition-all cursor-pointer"
                 title="Copy Password"
               >
@@ -274,6 +296,7 @@ export default function VaultPage() {
             name: editingItem.name,
             website: editingItem.website,
             username: editingItem.username,
+            password: editingItem.password,
             logo: editingItem.logo,
           } : null}
         />

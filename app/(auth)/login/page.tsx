@@ -30,7 +30,7 @@ export default function LoginPage() {
       dispatch(
         setCredentials({ user: res.data.user, token: res.data.access_token })
       );
-      setSession({ pass: password, saltValue: res.data.user.salt });
+      await setSession({ pass: password, saltValue: res.data.user.salt });
       toast.success(res.data.message || "Login successful");
       router.push("/dashboard");
     } catch (err: any) {

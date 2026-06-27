@@ -6,7 +6,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
 import { setCredentials, logout } from "@/store/authSlice";
 import Cookies from "js-cookie";
-import { getSession } from "@/services/session.service";
+import { getSession, clearSession } from "@/services/session.service";
 import { VaultUnlockModal } from "@/components/VaultUnlockModal";
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -37,8 +37,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     }
 
     // Auth is confirmed — now check if the crypto session is alive
-    const { masterPassword } = getSession();
-    if (!masterPassword) {
+    const session = getSession();
+    if (!session) {
       setNeedsUnlock(true);
     }
 
@@ -50,6 +50,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   };
 
   const handleLogout = () => {
+    clearSession();
     dispatch(logout());
     router.push("/login");
   };
@@ -65,7 +66,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   if (needsUnlock) {
     return (
       <VaultUnlockModal
-        salt={user?.salt ?? ""}
         onUnlocked={handleUnlocked}
         onLogout={handleLogout}
       />

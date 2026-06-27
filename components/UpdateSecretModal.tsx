@@ -33,7 +33,6 @@ export function UpdateSecretModal({ onSave, onClose, existingData }: UpdateSecre
     website: existingData?.website || "",
     username: existingData?.username || "",
     password: existingData?.password || "",
-    masterPassword: "",
     logo: existingData?.logo || ""
   });
 
@@ -141,10 +140,10 @@ export function UpdateSecretModal({ onSave, onClose, existingData }: UpdateSecre
         <div className="flex justify-between items-center pb-4">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">
-              Add New Secret
+              Update Secret
             </h2>
             <p className="text-text-vault/40 text-sm mt-1">
-              Protect your credentials with Clivv.
+              Update your secret.
             </p>
           </div>
           <button

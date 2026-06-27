@@ -8,6 +8,7 @@ import { ChevronRight, Settings, LogOut, User as UserIcon } from "lucide-react";
 import AuthGuard from "@/components/AuthGuard";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "@/store/authSlice";
+import { clearSession } from "@/services/session.service";
 import { RootState } from "@/store/store";
 
 export default function DashboardLayout({
@@ -32,6 +33,7 @@ export default function DashboardLayout({
   };
 
   const handleLogout = () => {
+    clearSession();
     dispatch(logout());
     router.push("/login");
   };

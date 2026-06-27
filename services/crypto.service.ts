@@ -3,7 +3,7 @@ import { getSession } from "./session.service"
 const IV_LENGTH = 12;
 const ALGORITHM = "AES-GCM";
 
-const deriveKey = async (masterPassword: string, salt: string): Promise<CryptoKey> => {
+export const deriveKey = async (masterPassword: string, salt: string): Promise<CryptoKey> => {
 
     const passwordKey = await crypto.subtle.importKey(
         "raw",
@@ -73,16 +73,14 @@ const decrypt = async (
 }
 
 export const encryptData = async (plainData: string): Promise<{ encryptedData: string, iv: string }> => {
-    const { masterPassword, salt } = getSession();
+    const encryptionKey = getSession();
 
-    if (!masterPassword || !salt) {
+    if (!encryptionKey) {
         throw new Error("Session expired");
     }
 
-    const key = await deriveKey(masterPassword, salt);
     const iv = generateIV();
-
-    const { encryptedData } = await encrypt(plainData, key, iv);
+    const { encryptedData } = await encrypt(plainData, encryptionKey, iv);
 
     return {
         encryptedData,
@@ -91,12 +89,11 @@ export const encryptData = async (plainData: string): Promise<{ encryptedData: s
 }
 
 export const decryptData = async ({ iv, encryptedData }: { iv: string, encryptedData: string }): Promise<string> => {
-    const { masterPassword, salt } = getSession();
+    const encryptionKey = getSession();
 
-    if (!masterPassword || !salt) {
+    if (!encryptionKey) {
         throw new Error("Session expired");
     }
 
-    const key = await deriveKey(masterPassword, salt);
-    return await decrypt(encryptedData, new Uint8Array(Buffer.from(iv, "base64")), key);
+    return await decrypt(encryptedData, new Uint8Array(Buffer.from(iv, "base64")), encryptionKey);
 }

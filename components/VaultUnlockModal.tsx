@@ -4,17 +4,17 @@ import { useState } from "react";
 import { Eye, EyeOff, LockKeyhole } from "lucide-react";
 import { setSession } from "@/services/session.service";
 import toast from "react-hot-toast";
+import api from "@/utils/api";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/store";
 
 interface VaultUnlockModalProps {
-  /** The salt stored on the current user object (from cookies/Redux). */
-  salt: string;
-  /** Called after the user successfully re-enters their master password. */
   onUnlocked: () => void;
-  /** Called if the user chooses to log out instead. */
   onLogout: () => void;
 }
 
-export function VaultUnlockModal({ salt, onUnlocked, onLogout }: VaultUnlockModalProps) {
+export function VaultUnlockModal({ onUnlocked, onLogout }: VaultUnlockModalProps) {
+  const email = useSelector((state: RootState) => state.auth.user?.email);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -27,12 +27,16 @@ export function VaultUnlockModal({ salt, onUnlocked, onLogout }: VaultUnlockModa
     }
     setLoading(true);
     try {
-      // Restore the in-memory crypto session from the supplied password + persisted salt
-      setSession({ pass: password, saltValue: salt });
+      const response = await api.post("/api/auth/verify", {
+        email: email,
+        password: password
+      });
+      await setSession({ pass: password, saltValue: response.data.user.salt });
       toast.success("Vault unlocked");
       onUnlocked();
-    } catch {
-      toast.error("Failed to unlock vault");
+    } catch (error) {
+      toast.error("Invalid credentials");
+      onLogout();
     } finally {
       setLoading(false);
     }
