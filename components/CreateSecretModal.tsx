@@ -36,11 +36,7 @@ export function CreateSecretModal({ onSave, onClose }: CreateSecretModalProps) {
       }
       setIsSearching(true);
       try {
-        const res = await fetch(`https://api.logo.dev/search?q=${formData.website}`, {
-          headers: {
-            Authorization: `Bearer ${process.env.NEXT_PUBLIC_LOGO_DEV_SECRET_KEY}`
-          }
-        });
+        const res = await fetch(`/api/logos?q=${formData.website}`);
         const data = await res.json();
         setSearchResults(data);
       } catch (e) {
