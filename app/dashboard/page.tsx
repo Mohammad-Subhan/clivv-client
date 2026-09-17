@@ -171,14 +171,50 @@ export default function VaultPage() {
       <div className="space-y-4">
         {/* Table Header */}
         <div className="grid grid-cols-12 px-6 py-2 text-[10px] uppercase tracking-[0.2em] font-bold text-text-vault/20">
-          <div className="col-span-4">Service & Name</div>
+          <div className="col-span-4">Service &amp; Name</div>
           <div className="col-span-3">Username</div>
           <div className="col-span-3">Password</div>
           <div className="col-span-2 text-right">Actions</div>
         </div>
 
-        {/* Empty State */}
-        {filteredItems.length === 0 && (
+        {/* Skeleton Loading State */}
+        {loading && (
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className="grid grid-cols-12 items-center rounded-2xl px-6 py-4 bg-white/3 border border-white/5"
+                style={{ animationDelay: `${i * 60}ms` }}
+              >
+                {/* Service & Name */}
+                <div className="col-span-4 flex items-center gap-4">
+                  <div className="w-10 h-10 bg-white/8 rounded-xl animate-pulse shrink-0" />
+                  <div className="space-y-2 flex-1">
+                    <div className="h-3 bg-white/8 rounded-full animate-pulse w-28" style={{ animationDelay: `${i * 60 + 80}ms` }} />
+                    <div className="h-2 bg-white/5 rounded-full animate-pulse w-20" style={{ animationDelay: `${i * 60 + 140}ms` }} />
+                  </div>
+                </div>
+                {/* Username */}
+                <div className="col-span-3 pr-4">
+                  <div className="h-2.5 bg-white/8 rounded-full animate-pulse w-32" style={{ animationDelay: `${i * 60 + 100}ms` }} />
+                </div>
+                {/* Password */}
+                <div className="col-span-3 pr-4">
+                  <div className="h-2.5 bg-white/8 rounded-full animate-pulse w-24" style={{ animationDelay: `${i * 60 + 120}ms` }} />
+                </div>
+                {/* Actions */}
+                <div className="col-span-2 flex justify-end gap-2">
+                  {Array.from({ length: 4 }).map((_, j) => (
+                    <div key={j} className="w-8 h-8 bg-white/5 rounded-lg animate-pulse" style={{ animationDelay: `${i * 60 + j * 30 + 160}ms` }} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Empty State — only shown after loading finishes */}
+        {!loading && filteredItems.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 px-6 glass-panel-heavy border border-white/5 rounded-3xl">
             <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-4">
               <ShieldAlert className="w-8 h-8 text-text-vault/20" />
@@ -211,7 +247,7 @@ export default function VaultPage() {
         )}
 
         {/* Vault items */}
-        {filteredItems.map((item: SecretItem) => (
+        {!loading && filteredItems.map((item: SecretItem) => (
           <div key={item._id} className="grid grid-cols-12 items-center rounded-2xl px-6 py-4 bg-white/3 border border-white/5 hover:bg-white/6 hover:border-primary/20 transition-all group animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="col-span-4 flex items-center gap-4">
               <div className="w-10 h-10 bg-black/40 rounded-xl flex items-center justify-center border border-white/5 shadow-inner overflow-hidden">

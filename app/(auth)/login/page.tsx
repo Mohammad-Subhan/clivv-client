@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 import api from "@/utils/api";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -93,16 +93,28 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 cursor-pointer right-0 pr-4 flex items-center text-text-vault/20 hover:text-text-vault/50 -translate-y-px"
+                  className="absolute inset-y-2.5 cursor-pointer right-0 mr-2.5 p-2 rounded-full h-fit flex items-center text-text-vault/20 hover:text-text-vault/50 -translate-y-px"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
-            <button type="submit" disabled={loading} className="w-full primary-gradient text-on-primary py-4 rounded-xl font-bold text-sm btn-elegant flex items-center justify-center gap-2 mt-4 cursor-pointer">
-              Access Vault
-              <ArrowRight className="w-4 h-4" />
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full primary-gradient text-on-primary py-4 rounded-xl font-bold text-sm btn-elegant flex items-center justify-center gap-2 mt-4 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                </>
+              ) : (
+                <>
+                  Access Vault
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
             <button type="button" className="w-full bg-white/5 hover:bg-white/10 border border-white/10 py-3.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer">
               <Image src="/google.png" alt="Google" width={18} height={18} />
