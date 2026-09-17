@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, EyeOff, LockKeyhole } from "lucide-react";
+import { Eye, EyeOff, LockKeyhole, Loader2 } from "lucide-react";
 import { setSession } from "@/services/session.service";
 import toast from "react-hot-toast";
 import api from "@/utils/api";
@@ -64,7 +64,7 @@ export function VaultUnlockModal({ onUnlocked, onLogout }: VaultUnlockModalProps
             Unlock Your Vault
           </h2>
           <p className="text-text-vault/40 text-sm text-center mb-8">
-            Your session was restored. Re-enter your master password to decrypt your secrets.
+            Your vault was locked due to inactivity or a restored session. Re-enter your master password to continue.
           </p>
 
           <form onSubmit={handleUnlock} className="space-y-4">
@@ -91,7 +91,7 @@ export function VaultUnlockModal({ onUnlocked, onLogout }: VaultUnlockModalProps
               disabled={loading}
               className="w-full primary-gradient text-on-primary py-3.5 rounded-xl font-bold text-sm btn-elegant flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
-              {loading ? "Unlocking..." : "Unlock Vault"}
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Unlock Vault"}
             </button>
           </form>
 

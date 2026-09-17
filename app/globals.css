@@ -160,13 +160,13 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(251, 191, 36, 0.25);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 9999px;
   transition: background 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(251, 191, 36, 0.55);
+  background: rgba(255, 255, 255, 0.18);
 }
 
 ::-webkit-scrollbar-corner {
@@ -176,5 +176,5 @@ body {
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(251, 191, 36, 0.25) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
 }

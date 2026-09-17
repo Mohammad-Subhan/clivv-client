@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import Link from "next/link";
 import { Sidebar } from "@/components/Sidebar";
-import { ChevronRight, Settings, LogOut, User as UserIcon } from "lucide-react";
+import { ChevronRight, LogOut } from "lucide-react";
 import AuthGuard from "@/components/AuthGuard";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "@/store/authSlice";
 import { clearSession } from "@/services/session.service";
 import { RootState } from "@/store/store";
+
+const SIDEBAR_STORAGE_KEY = "clivv_sidebar_open";
 
 export default function DashboardLayout({
   children,
@@ -19,11 +20,24 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const dispatch = useDispatch();
-
   const { user } = useSelector((state: RootState) => state.auth);
-  // Helper to determine page title based on route
+
+  useEffect(() => {
+    const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+    if (stored === "true") setSidebarOpen(true);
+  }, []);
+
+  const handleToggleSidebar = () => {
+    setSidebarOpen((prev) => {
+      const next = !prev;
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next));
+      return next;
+    });
+  };
+
   const getPageTitle = () => {
     if (pathname === "/dashboard") return "My Secrets";
     if (pathname === "/dashboard/settings") return "Settings";
@@ -40,10 +54,16 @@ export default function DashboardLayout({
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-background-vault text-text-vault flex">
-        <Sidebar />
-        <main className="flex-1 ml-64 min-h-screen flex flex-col">
-          {/* Top bar (Common for all dashboard pages) */}
+    <div className="min-h-screen bg-background-vault text-text-vault flex">
+        <Sidebar isOpen={sidebarOpen} onToggle={handleToggleSidebar} />
+
+        <main
+          className={`
+            flex-1 min-h-screen flex flex-col
+            transition-[margin-left] duration-300 ease-in-out
+            ${sidebarOpen ? "ml-64" : "ml-16"}
+          `}
+        >
           <header className="h-16 border-b border-white/5 flex items-center justify-between px-8 bg-black/20 backdrop-blur-md sticky top-0 z-40">
             <div className="flex items-center gap-4">
               <h1 className="text-sm font-bold opacity-40">Clivv</h1>
@@ -52,7 +72,6 @@ export default function DashboardLayout({
             </div>
 
             <div className="flex items-center gap-6">
-              {/* Profile Dropdown Container */}
               <div className="relative">
                 <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
@@ -65,19 +84,17 @@ export default function DashboardLayout({
                   />
                 </button>
 
-                {/* Dropdown Menu */}
                 {showProfileMenu && (
                   <>
                     <div
                       className="fixed inset-0 z-10"
                       onClick={() => setShowProfileMenu(false)}
-                    ></div>
+                    />
                     <div className="absolute right-0 mt-3 w-56 bg-black border border-white/10 rounded-2xl shadow-2xl z-20 py-2 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
                       <div className="px-4 py-3 border-b border-white/10 mb-1">
                         <p className="text-xs font-bold text-white">{user?.name}</p>
                         <p className="text-[10px] text-white/30 truncate">{user?.email}</p>
                       </div>
-
                       <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-error-container hover:bg-error-container/10 transition-all cursor-pointer"
@@ -92,7 +109,6 @@ export default function DashboardLayout({
             </div>
           </header>
 
-          {/* Content Area */}
           <div className="p-8 max-w-6xl mx-auto w-full flex-1">
             {children}
           </div>
